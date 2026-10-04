@@ -1,0 +1,962 @@
+<!doctype html>
+<html lang="it">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#0b0b0e" />
+    <title>sparkgpt — Il tuo spazio creativo</title>
+    <style>
+      :root {
+        color-scheme: dark;
+        --bg: #0b0b0e;
+        --panel: #111115;
+        --panel-soft: #17171c;
+        --line: rgba(255, 255, 255, 0.09);
+        --text: #f7f5f2;
+        --muted: #99969a;
+        --orange: #ff945b;
+        --orange-bright: #ffad78;
+        font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        font-synthesis: none;
+        text-rendering: optimizeLegibility;
+      }
+
+      * { box-sizing: border-box; }
+      body {
+        margin: 0;
+        min-width: 320px;
+        min-height: 100vh;
+        color: var(--text);
+        background:
+          radial-gradient(ellipse at 56% 2%, rgba(164, 74, 34, 0.17), transparent 34rem),
+          linear-gradient(rgba(255,255,255,.018) 1px, transparent 1px),
+          linear-gradient(90deg, rgba(255,255,255,.018) 1px, transparent 1px),
+          var(--bg);
+        background-size: auto, 54px 54px, 54px 54px, auto;
+      }
+      button, textarea { font: inherit; }
+      button { color: inherit; }
+      .app { display: flex; min-height: 100vh; min-height: 100dvh; }
+      .sidebar {
+        position: sticky;
+        top: 0;
+        height: 100vh;
+        align-self: flex-start;
+        width: 258px;
+        flex: 0 0 258px;
+        display: flex;
+        flex-direction: column;
+        padding: 23px 16px 17px;
+        border-right: 1px solid var(--line);
+        background: rgba(10, 10, 13, .76);
+        backdrop-filter: blur(18px);
+      }
+      .brand-row { display: flex; align-items: center; gap: 10px; padding: 0 8px; margin-bottom: 30px; }
+      .brand-mark {
+        width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%;
+        color: #1b1110; background: var(--orange); box-shadow: 0 0 24px rgba(255, 148, 91, .22);
+        font-size: 19px; font-weight: 900; letter-spacing: -5px; padding-right: 4px;
+      }
+      .brand-name { font-size: 17px; font-weight: 720; letter-spacing: -.5px; }
+      .new-chat {
+        display: flex; align-items: center; gap: 10px; width: 100%; padding: 11px 12px;
+        border: 1px solid rgba(255, 148, 91, .24); border-radius: 11px;
+        background: rgba(255, 148, 91, .08); cursor: pointer; transition: .2s ease;
+      }
+      .new-chat:hover { background: rgba(255, 148, 91, .15); border-color: rgba(255, 148, 91, .45); }
+      .new-chat span:first-child { color: var(--orange-bright); font-size: 20px; line-height: 16px; }
+      .side-label { margin: 29px 9px 11px; color: #77747a; text-transform: uppercase; font-size: 10px; font-weight: 700; letter-spacing: 1.15px; }
+      .history { display: grid; gap: 4px; }
+      .history-item {
+        overflow: hidden; padding: 10px 11px; border: 0; border-radius: 8px;
+        color: #b5b2b6; background: transparent; text-align: left; text-overflow: ellipsis;
+        white-space: nowrap; font-size: 12px; cursor: pointer;
+      }
+      .history-item:hover, .history-item.active { color: var(--text); background: rgba(255,255,255,.055); }
+      .side-spacer { flex: 1; }
+      .profile {
+        display: flex; align-items: center; gap: 10px; padding: 12px 8px 3px;
+        border-top: 1px solid var(--line); color: #d6d2d6; font-size: 12px;
+      }
+      .avatar { display: grid; place-items: center; width: 29px; height: 29px; border-radius: 50%; background: #292528; color: var(--orange-bright); font-weight: 700; }
+      .profile small { display: block; margin-top: 3px; color: #817d83; font-size: 10px; }
+      .main { min-width: 0; flex: 1; display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
+      .topbar { height: 68px; display: flex; align-items: center; justify-content: space-between; padding: 0 35px; border-bottom: 1px solid rgba(255,255,255,.045); }
+      .beta-notice { padding: 7px 16px; border-bottom: 1px solid rgba(255,148,91,.16); color: #efb38f; background: rgba(255,148,91,.055); font-size: 11px; line-height: 1.5; text-align: center; }
+      .model-picker { display: flex; align-items: center; gap: 8px; padding: 8px 11px; border: 1px solid var(--line); border-radius: 9px; background: rgba(19,19,23,.65); font-size: 12px; color: #e8e5e4; }
+      .model-picker b { font-size: 11px; color: var(--orange-bright); }
+      .top-actions { display: flex; align-items: center; gap: 12px; color: #aaa6aa; font-size: 12px; }
+      .status-dot { width: 7px; height: 7px; display: inline-block; margin-right: 6px; border-radius: 50%; background: #77cf9a; box-shadow: 0 0 9px #77cf9a; }
+      .content { flex: 1; width: min(100%, 900px); margin: 0 auto; padding: 54px 28px 26px; display: flex; flex-direction: column; }
+      .welcome { margin: auto 0 29px; text-align: center; }
+      .eyebrow {
+        display: inline-flex; align-items: center; gap: 8px; padding: 7px 12px;
+        border: 1px solid rgba(255,148,91,.22); border-radius: 999px;
+        background: rgba(255,148,91,.065); color: #e1b295; font-size: 11px;
+      }
+      .eyebrow i { width: 6px; height: 6px; border-radius: 50%; background: var(--orange); box-shadow: 0 0 10px var(--orange); }
+      h1 { margin: 21px auto 12px; max-width: 700px; font-size: clamp(37px, 5.5vw, 67px); line-height: .99; letter-spacing: -.065em; font-weight: 740; }
+      h1 span { color: var(--orange-bright); text-shadow: 0 0 42px rgba(255, 148, 91, .18); }
+      .intro { margin: 0 auto; max-width: 520px; color: #aaa6aa; font-size: 14px; line-height: 1.7; }
+      .quick-prompts { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: min(100%, 690px); margin: 25px auto 0; }
+      .prompt-card {
+        min-height: 81px; padding: 13px 14px; border: 1px solid var(--line); border-radius: 12px;
+        background: rgba(19,19,23,.68); text-align: left; cursor: pointer; transition: .2s ease;
+      }
+      .prompt-card:hover { transform: translateY(-2px); border-color: rgba(255,148,91,.32); background: rgba(255,148,91,.055); }
+      .prompt-icon { display: block; margin-bottom: 8px; color: var(--orange-bright); font-size: 15px; }
+      .prompt-card strong { display: block; color: #e7e3e4; font-size: 11px; font-weight: 600; }
+      .prompt-card small { display: block; margin-top: 4px; color: #88848a; font-size: 10px; }
+      .conversation { display: none; width: min(100%, 720px); margin: 0 auto auto; padding: 0 0 24px; }
+      .conversation.visible { display: block; }
+      .welcome.hidden { display: none; }
+      .message { display: flex; gap: 12px; margin: 0 0 24px; animation: appear .25s ease-out; }
+      .message.user { justify-content: flex-end; }
+      .message .avatar { flex: 0 0 29px; }
+      .message-body { max-width: min(82%, 590px); padding-top: 4px; color: #dedadd; font-size: 14px; line-height: 1.75; white-space: pre-wrap; }
+      .message.user .message-body { padding: 11px 14px; border: 1px solid rgba(255,255,255,.08); border-radius: 14px 14px 4px 14px; background: #1b1a1f; }
+      .message .avatar.ai { color: #25130a; background: var(--orange); }
+      .message-body p { margin: 0 0 10px; }
+      .message-body p:last-child { margin-bottom: 0; }
+      .message-image { display: block; width: min(100%, 360px); max-height: 280px; object-fit: contain; margin: 9px 0 0; border: 1px solid var(--line); border-radius: 9px; background: var(--panel); }
+      .voice-panel { display: none; margin: 24px auto 0; max-width: 460px; text-align: center; }
+      .voice-panel.visible { display: block; }
+      .voice-orb { width: 96px; height: 96px; margin: 0 auto 17px; display: grid; place-items: center; border: 1px solid rgba(255,148,91,.45); border-radius: 50%; color: #26130c; background: radial-gradient(circle at 35% 28%, #ffc49b, #ff8851 68%); box-shadow: 0 0 48px rgba(255,130,74,.23), inset 0 0 20px rgba(255,255,255,.18); font-size: 31px; transition: .2s; }
+      .voice-orb.listening { animation: pulse 1.4s ease-in-out infinite; }
+      .voice-orb.speaking { animation: pulse 1.4s ease-in-out infinite; }
+      .voice-panel h2 { margin: 0 0 8px; font-size: 19px; letter-spacing: -.4px; }
+      .voice-panel p { margin: 0 auto 17px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+      .voice-transcript { min-height: 21px; color: #dedadd !important; }
+      .voice-actions { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+      .voice-button { padding: 10px 16px; border: 1px solid rgba(255,148,91,.4); border-radius: 9px; background: rgba(255,148,91,.1); color: #ffd2b5; cursor: pointer; }
+      .voice-button.secondary { border-color: var(--line); background: rgba(255,255,255,.035); color: #c1bdc1; }
+      .voice-button:disabled { opacity: .45; cursor: not-allowed; }
+      .composer-wrap { width: min(100%, 720px); margin: auto auto 0; }
+      .composer-wrap.voice-mode .composer, .composer-wrap.voice-mode .disclaimer { display: none; }
+      .image-upload-row { display: none; align-items: center; gap: 10px; margin: 0 0 10px 2px; }
+      .composer-wrap:not(.voice-mode) .image-upload-row { display: flex; }
+      .image-upload-button { display: inline-flex; align-items: center; gap: 7px; padding: 8px 11px; border: 1px solid rgba(255,148,91,.26); border-radius: 8px; background: rgba(255,148,91,.07); color: #ffc09b; font-size: 11px; cursor: pointer; }
+      .image-upload-button:hover { background: rgba(255,148,91,.13); }
+      .image-upload-button input { display: none; }
+      .image-upload-note { color: #817d83; font-size: 10px; }
+      .image-preview { display: flex; align-items: center; gap: 8px; }
+      .image-preview[hidden] { display: none; }
+      .image-preview img { width: 42px; height: 42px; object-fit: cover; border: 1px solid var(--line); border-radius: 7px; }
+      .image-preview-name { max-width: 180px; overflow: hidden; color: #c1bdc1; font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+      .image-remove-button { width: 24px; height: 24px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: #c1bdc1; cursor: pointer; }
+      .generated-art { display: grid; gap: 9px; margin-top: 10px; }
+      .generated-art img { display: block; width: min(100%, 512px); height: auto; border: 1px solid var(--line); border-radius: 10px; background: var(--panel); }
+      .generated-art a { justify-self: start; padding: 7px 10px; border: 1px solid var(--line); border-radius: 7px; color: #ffc09b; font-size: 11px; text-decoration: none; }
+      .generated-art a:hover { border-color: rgba(255,148,91,.38); }
+      .mode-tabs { display: flex; gap: 6px; margin: 0 0 10px 2px; }
+      .mode-tab { display: inline-flex; align-items: center; gap: 6px; padding: 7px 10px; border: 1px solid transparent; border-radius: 8px; background: transparent; color: #9b979c; font-size: 11px; cursor: pointer; }
+      .mode-tab:hover { color: #e8e3e3; background: rgba(255,255,255,.04); }
+      .mode-tab.selected { border-color: rgba(255,148,91,.24); color: #ffc09b; background: rgba(255,148,91,.08); }
+      .composer { padding: 12px 12px 9px 16px; border: 1px solid rgba(255,255,255,.14); border-radius: 15px; background: rgba(20,19,23,.93); box-shadow: 0 12px 44px rgba(0,0,0,.25), 0 0 35px rgba(255,128,72,.035); transition: border-color .2s, box-shadow .2s; }
+      .composer:focus-within { border-color: rgba(255,148,91,.48); box-shadow: 0 0 0 3px rgba(255,148,91,.06), 0 12px 44px rgba(0,0,0,.25); }
+      textarea { display: block; width: 100%; min-height: 45px; max-height: 160px; resize: vertical; padding: 3px 0 8px; border: 0; outline: 0; color: #f6f2f1; background: transparent; font-size: 13px; line-height: 1.6; }
+      textarea::placeholder { color: #7f7b80; }
+      .composer-bottom { display: flex; align-items: center; justify-content: space-between; }
+      .composer-hint { color: #77737a; font-size: 10px; }
+      .send-button { width: 34px; height: 34px; display: grid; place-items: center; border: 0; border-radius: 9px; color: #20110b; background: var(--orange); font-size: 17px; font-weight: 700; cursor: pointer; transition: .18s; }
+      .send-button:hover { background: #ffb083; transform: translateY(-1px); }
+      .send-button:disabled { opacity: .42; cursor: default; transform: none; }
+      .disclaimer { margin: 10px auto 0; color: #706c72; font-size: 10px; text-align: center; }
+      .mobile-menu { display: none; }
+      .mobile-backdrop { display: none; }
+      .cursor-dot { position: fixed; z-index: 20; width: 7px; height: 7px; pointer-events: none; border-radius: 50%; background: #ff9c63; box-shadow: 0 0 12px 3px rgba(255,134,78,.42); transform: translate(-50%,-50%); }
+      .app { visibility: hidden; }
+      .app.authenticated { visibility: visible; }
+      .auth-gate { position: fixed; z-index: 30; inset: 0; display: grid; place-items: center; overflow: auto; padding: 28px 16px; background: radial-gradient(ellipse at 50% 0, rgba(164,74,34,.2), transparent 34rem), var(--bg); }
+      .auth-gate[hidden] { display: none; }
+      .auth-card { width: min(100%, 440px); padding: 30px; border: 1px solid var(--line); border-radius: 18px; background: rgba(17,17,21,.94); box-shadow: 0 24px 90px rgba(0,0,0,.38); }
+      .auth-brand { display: flex; justify-content: center; align-items: center; gap: 10px; margin-bottom: 23px; }
+      .auth-brand .brand-mark { flex: 0 0 34px; }
+      .auth-title { margin: 0; text-align: center; font-size: 25px; letter-spacing: -.8px; }
+      .auth-description { margin: 9px auto 22px; max-width: 340px; color: var(--muted); font-size: 13px; line-height: 1.65; text-align: center; }
+      .auth-message { margin: 13px 0 0; color: #f2b78f; font-size: 12px; line-height: 1.55; text-align: center; }
+      .auth-message a { color: var(--orange-bright); }
+      .auth-message:empty { display: none; }
+      .auth-switch { display: flex; gap: 5px; margin-bottom: 16px; padding: 4px; border: 1px solid var(--line); border-radius: 10px; background: #0d0d11; }
+      .auth-switch[hidden] { display: none; }
+      .auth-switch button { flex: 1; padding: 9px; border: 0; border-radius: 7px; background: transparent; color: var(--muted); font-size: 12px; cursor: pointer; }
+      .auth-switch button[aria-selected="true"] { background: rgba(255,148,91,.12); color: var(--orange-bright); }
+      .auth-widget { display: flex; justify-content: center; min-height: 100px; }
+      .profile { min-width: 0; }
+      .profile-details { min-width: 0; }
+      .profile-name { overflow: hidden; max-width: 135px; text-overflow: ellipsis; white-space: nowrap; }
+      .profile small { overflow: hidden; max-width: 135px; text-overflow: ellipsis; white-space: nowrap; }
+      .profile-actions { display: flex; gap: 4px; margin-left: auto; }
+      .signout-button { padding: 6px 8px; border: 1px solid var(--line); border-radius: 7px; background: transparent; color: #aaa6aa; font-size: 10px; cursor: pointer; }
+      .signout-button:hover { color: var(--text); border-color: rgba(255,148,91,.35); }
+      .signout-button:disabled { opacity: .5; cursor: wait; }
+      @keyframes appear { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+      @keyframes pulse { 50% { box-shadow: 0 0 70px rgba(255,130,74,.48), inset 0 0 25px rgba(255,255,255,.25); transform: scale(1.045); } }
+      @media (max-width: 760px) {
+        body.mobile-menu-open { overflow: hidden; }
+        .sidebar { position: fixed; z-index: 5; inset: 0 auto 0 0; width: min(82vw, 300px); flex-basis: min(82vw, 300px); transform: translateX(-102%); transition: transform .22s ease; box-shadow: 15px 0 55px rgba(0,0,0,.5); }
+        .sidebar.open { transform: translateX(0); }
+        .mobile-backdrop.visible { display: block; position: fixed; z-index: 4; inset: 0; background: rgba(0,0,0,.56); backdrop-filter: blur(2px); }
+        .topbar { height: 60px; min-height: 60px; padding: 0 12px; }
+        .mobile-menu { display: inline-grid; place-items: center; width: 44px; height: 44px; flex: 0 0 44px; margin-right: 7px; border: 1px solid var(--line); border-radius: 8px; background: #141418; cursor: pointer; }
+        .topbar-left { display: flex; align-items: center; }
+        .top-actions { font-size: 0; }
+        .content { min-height: 0; padding: 28px 14px max(16px, env(safe-area-inset-bottom)); }
+        .welcome { margin-bottom: 23px; }
+        h1 { max-width: 510px; }
+        .quick-prompts { grid-template-columns: 1fr; max-width: 420px; margin-top: 19px; }
+        .prompt-card { min-height: 67px; }
+        .prompt-icon { float: left; margin: 1px 10px 0 0; }
+        .prompt-card small { margin-top: 4px; }
+        .image-upload-row { flex-wrap: wrap; gap: 8px; }
+        .image-upload-note { flex: 1 1 100%; }
+        .mode-tab { min-height: 42px; }
+        .composer { padding-left: 12px; }
+        textarea { font-size: 16px; }
+        .send-button { width: 44px; height: 44px; }
+        .auth-card { padding: 24px 18px; }
+        .beta-notice { padding: 7px 10px; font-size: 10px; }
+      }
+      @media (prefers-reduced-motion: reduce) {
+        *, *:before, *:after { scroll-behavior: auto !important; animation-duration: .01ms !important; transition-duration: .01ms !important; }
+        .cursor-dot { display: none !important; }
+      }
+      @media (hover: none), (pointer: coarse) { .cursor-dot { display: none; } }
+    </style>
+  </head>
+  <body>
+    <section class="auth-gate" id="authGate" aria-labelledby="authTitle">
+      <div class="auth-card">
+        <div class="auth-brand"><div class="brand-mark">••</div><div class="brand-name">sparkgpt</div></div>
+        <h1 class="auth-title" id="authTitle">Il tuo spazio, il tuo account</h1>
+        <p class="auth-description">Accedi o crea un account per continuare. Puoi usare Google, email e password oppure una passkey.</p>
+        <div class="auth-switch" id="authSwitch" role="tablist" aria-label="Accesso o registrazione" hidden>
+          <button type="button" id="authSignInTab" role="tab" aria-selected="true">Accedi</button>
+          <button type="button" id="authSignUpTab" role="tab" aria-selected="false">Crea un account</button>
+        </div>
+        <div class="auth-widget" id="authWidget"></div>
+        <p class="auth-message" id="authMessage" role="status">Caricamento accesso sicuro...</p>
+      </div>
+    </section>
+    <div class="app">
+      <aside class="sidebar" id="sidebar">
+        <div class="brand-row"><div class="brand-mark">••</div><div class="brand-name">sparkgpt</div></div>
+        <button class="new-chat" id="newChat"><span>+</span><span>Nuova conversazione</span></button>
+        <div class="side-label">Recenti</div>
+        <nav class="history" id="history">
+          <button class="history-item active">Idee per la ricerca di scienze</button>
+          <button class="history-item">Un poster per il mio progetto</button>
+          <button class="history-item">Ripasso di inglese</button>
+        </nav>
+        <div class="side-spacer"></div>
+        <div class="profile"><div class="avatar" id="profileAvatar">S</div><div class="profile-details"><div class="profile-name" id="profileName">Account</div><small id="profileEmail"></small></div><div class="profile-actions"><button class="signout-button" id="createPasskeyButton" type="button" title="Crea una passkey per questo dispositivo">Passkey</button><button class="signout-button" id="signOutButton" type="button">Esci</button></div></div>
+      </aside>
+      <div class="mobile-backdrop" id="mobileBackdrop" aria-hidden="true"></div>
+
+      <main class="main">
+        <div class="beta-notice" role="note">Questa AI è ancora in beta: è stata appena rilasciata da Massimo e può contenere errori.</div>
+        <header class="topbar">
+          <div class="topbar-left">
+            <button class="mobile-menu" id="mobileMenu" type="button" aria-label="Apri menu" aria-controls="sidebar" aria-expanded="false">☰</button>
+            <div class="model-picker"><b>✦</b> sparkgpt <span style="color:#77747a">·</span> <span style="color:#a7a3a8">Assistente AI</span></div>
+          </div>
+          <div class="top-actions"><span><i class="status-dot"></i>Tutto pronto</span></div>
+        </header>
+
+        <section class="content">
+          <div class="welcome" id="welcome">
+            <div class="eyebrow"><i></i> Il tuo spazio per imparare e creare</div>
+            <h1>Che cosa vuoi<br /><span>fare oggi?</span></h1>
+            <p class="intro">Studia un argomento, dai forma alle tue idee o fai una conversazione. Da dove cominciamo?</p>
+            <div class="quick-prompts">
+              <button class="prompt-card" data-mode="chat" data-prompt="Mi aiuti a capire la fotosintesi con parole semplici?"><span class="prompt-icon">✳</span><strong>Studia con metodo</strong><small>Spiegazioni, riassunti e compiti</small></button>
+              <button class="prompt-card" data-mode="image" data-prompt="Crea un'immagine di un paesaggio spaziale al tramonto"><span class="prompt-icon">◈</span><strong>Immagina qualcosa</strong><small>Trasforma le idee in immagini</small></button>
+              <button class="prompt-card" data-mode="voice" data-prompt=""><span class="prompt-icon">◖</span><strong>Facciamo due parole</strong><small>Parla con il tuo assistente</small></button>
+            </div>
+          </div>
+
+          <div class="conversation" id="conversation" aria-live="polite"></div>
+
+          <div class="voice-panel" id="voicePanel">
+            <div class="voice-orb">✳</div>
+            <h2>Parliamo a voce</h2>
+            <p>Avvia il microfono e fai una domanda. sparkgpt ti risponde a voce, usando il modello locale sul tuo PC.</p>
+            <p>Il riconoscimento del microfono dipende dal browser e potrebbe richiedere internet; le risposte AI restano locali.</p>
+            <p class="voice-transcript" id="voiceTranscript"></p>
+            <div class="voice-actions">
+              <button class="voice-button" id="voiceButton">Inizia a parlare</button>
+              <button class="voice-button secondary" id="voiceReadButton">Riascolta risposta</button>
+              <button class="voice-button secondary" id="voiceStopButton">Ferma audio</button>
+            </div>
+          </div>
+
+          <div class="composer-wrap" id="composerWrap">
+            <div class="mode-tabs" role="tablist" aria-label="Modalità assistente">
+              <button class="mode-tab selected" data-mode="chat" role="tab" aria-selected="true">✦ Chat</button>
+              <button class="mode-tab" data-mode="image" role="tab" aria-selected="false">◈ Immagini</button>
+              <button class="mode-tab" data-mode="voice" role="tab" aria-selected="false">◖ Voce</button>
+            </div>
+            <div class="image-upload-row">
+              <label class="image-upload-button" for="referenceImage">＋ Allega una foto
+                <input id="referenceImage" type="file" accept="image/png,image/jpeg,image/webp" />
+              </label>
+              <span class="image-upload-note" id="imageUploadNote">PNG, JPG o WebP · massimo 8 MB · analisi locale</span>
+              <div class="image-preview" id="imagePreview" hidden>
+                <img id="imagePreviewPhoto" alt="Anteprima della foto da usare come riferimento" />
+                <span class="image-preview-name" id="imagePreviewName"></span>
+                <button class="image-remove-button" id="removeImageButton" type="button" aria-label="Rimuovi foto">×</button>
+              </div>
+            </div>
+            <form class="composer" id="chatForm">
+              <textarea id="promptInput" rows="2" aria-label="Scrivi un messaggio" placeholder="Chiedimi quello che vuoi..."></textarea>
+              <div class="composer-bottom">
+                <span class="composer-hint" id="composerHint">Invio per inviare · Maiuscole + Invio per andare a capo</span>
+                <button class="send-button" id="sendButton" type="submit" aria-label="Invia messaggio">↑</button>
+              </div>
+            </form>
+            <p class="disclaimer">Modello locale sul tuo PC: nessun credito API o costo per messaggio. Le risposte possono comunque contenere errori.</p>
+          </div>
+        </section>
+      </main>
+    </div>
+    <script>
+      (() => {
+        const form = document.querySelector("#chatForm");
+        const input = document.querySelector("#promptInput");
+        const sendButton = document.querySelector("#sendButton");
+        const conversation = document.querySelector("#conversation");
+        const welcome = document.querySelector("#welcome");
+        const composerWrap = document.querySelector("#composerWrap");
+        const mobileMenu = document.querySelector("#mobileMenu");
+        const mobileBackdrop = document.querySelector("#mobileBackdrop");
+        const sidebar = document.querySelector("#sidebar");
+        const voicePanel = document.querySelector("#voicePanel");
+        const voiceButton = document.querySelector("#voiceButton");
+        const voiceReadButton = document.querySelector("#voiceReadButton");
+        const voiceStopButton = document.querySelector("#voiceStopButton");
+        const voiceTranscript = document.querySelector("#voiceTranscript");
+        const modeTabs = [...document.querySelectorAll(".mode-tab")];
+        const app = document.querySelector(".app");
+        const authGate = document.querySelector("#authGate");
+        const authWidget = document.querySelector("#authWidget");
+        const authMessage = document.querySelector("#authMessage");
+        const authSwitch = document.querySelector("#authSwitch");
+        const authSignInTab = document.querySelector("#authSignInTab");
+        const authSignUpTab = document.querySelector("#authSignUpTab");
+        const referenceImageInput = document.querySelector("#referenceImage");
+        const imagePreview = document.querySelector("#imagePreview");
+        const imagePreviewPhoto = document.querySelector("#imagePreviewPhoto");
+        const imagePreviewName = document.querySelector("#imagePreviewName");
+        const imageUploadNote = document.querySelector("#imageUploadNote");
+        const profileName = document.querySelector("#profileName");
+        const profileEmail = document.querySelector("#profileEmail");
+        const profileAvatar = document.querySelector("#profileAvatar");
+        const createPasskeyButton = document.querySelector("#createPasskeyButton");
+        const signOutButton = document.querySelector("#signOutButton");
+        const chatHistory = [];
+        const generatedImageUrls = [];
+        const messageImageUrls = [];
+        let chatQueue = Promise.resolve();
+        let chatPendingCount = 0;
+        let chatEpoch = 0;
+        let activeChatController = null;
+        let clerk;
+        let authView;
+        let mode = "chat";
+        let referenceImage = null;
+        let referencePreviewUrl = "";
+        let recognition;
+        let isListening = false;
+        let lastAssistantReply = "";
+        let speechRequestId = 0;
+        const speechSynthesis = window.speechSynthesis;
+        const SpeechSynthesisUtterance = window.SpeechSynthesisUtterance;
+
+        function addMessage(text, author, imageFile = null) {
+          const message = document.createElement("div");
+          message.className = `message ${author}`;
+          const avatar = document.createElement("div");
+          avatar.className = `avatar ${author === "assistant" ? "ai" : ""}`;
+          avatar.textContent = author === "assistant" ? "••" : "S";
+          const body = document.createElement("div");
+          body.className = "message-body";
+          const paragraph = document.createElement("p");
+          paragraph.textContent = text;
+          body.append(paragraph);
+          if (imageFile) {
+            const image = document.createElement("img");
+            const imageUrl = URL.createObjectURL(imageFile);
+            messageImageUrls.push(imageUrl);
+            image.className = "message-image";
+            image.src = imageUrl;
+            image.alt = `Immagine allegata: ${imageFile.name}`;
+            body.append(image);
+          }
+          if (author === "user") { message.append(body, avatar); }
+          else { message.append(avatar, body); }
+          conversation.append(message);
+          conversation.scrollTop = conversation.scrollHeight;
+          return paragraph;
+        }
+
+        function addGeneratedImage(blob, prompt) {
+          const objectUrl = URL.createObjectURL(blob);
+          generatedImageUrls.push(objectUrl);
+          const message = document.createElement("div");
+          message.className = "message assistant";
+          const avatar = document.createElement("div");
+          avatar.className = "avatar ai";
+          avatar.textContent = "••";
+          const body = document.createElement("div");
+          body.className = "message-body";
+          const paragraph = document.createElement("p");
+          paragraph.textContent = "Ecco l'immagine creata sul tuo PC:";
+          const art = document.createElement("div");
+          art.className = "generated-art";
+          const image = document.createElement("img");
+          image.src = objectUrl;
+          image.alt = `Immagine generata: ${prompt}`;
+          const download = document.createElement("a");
+          download.href = objectUrl;
+          download.download = `sparkgpt-${Date.now()}.png`;
+          download.textContent = "Scarica immagine";
+          art.append(image, download);
+          body.append(paragraph, art);
+          message.append(avatar, body);
+          conversation.append(message);
+          image.addEventListener("load", () => { conversation.scrollTop = conversation.scrollHeight; }, { once: true });
+          conversation.scrollTop = conversation.scrollHeight;
+        }
+
+        function clearReferenceImage() {
+          referenceImage = null;
+          referenceImageInput.value = "";
+          imagePreview.hidden = true;
+          imagePreviewPhoto.removeAttribute("src");
+          imagePreviewName.textContent = "";
+          imageUploadNote.textContent = "PNG, JPG o WebP · massimo 8 MB · analisi locale";
+          if (referencePreviewUrl) URL.revokeObjectURL(referencePreviewUrl);
+          referencePreviewUrl = "";
+        }
+
+        function setMobileMenu(open) {
+          sidebar.classList.toggle("open", open);
+          mobileBackdrop.classList.toggle("visible", open);
+          mobileMenu.setAttribute("aria-expanded", String(open));
+          mobileMenu.setAttribute("aria-label", open ? "Chiudi menu" : "Apri menu");
+          document.body.classList.toggle("mobile-menu-open", open);
+        }
+
+        async function encodeImage(file) {
+          const bytes = new Uint8Array(await file.arrayBuffer());
+          let binary = "";
+          for (let offset = 0; offset < bytes.length; offset += 0x8000) {
+            binary += String.fromCharCode(...bytes.subarray(offset, offset + 0x8000));
+          }
+          return btoa(binary);
+        }
+
+        referenceImageInput.addEventListener("change", () => {
+          const file = referenceImageInput.files?.[0];
+          if (!file) return;
+          if (!["image/png", "image/jpeg", "image/webp"].includes(file.type)) {
+            clearReferenceImage();
+            imageUploadNote.textContent = "Formato non supportato. Scegli PNG, JPG o WebP.";
+            return;
+          }
+          if (file.size > 8 * 1024 * 1024) {
+            clearReferenceImage();
+            imageUploadNote.textContent = "La foto supera il limite di 8 MB.";
+            return;
+          }
+          if (referencePreviewUrl) URL.revokeObjectURL(referencePreviewUrl);
+          referenceImage = file;
+          referencePreviewUrl = URL.createObjectURL(file);
+          imagePreviewPhoto.src = referencePreviewUrl;
+          imagePreviewName.textContent = file.name;
+          imageUploadNote.textContent = "La foto sarà analizzata sul tuo PC.";
+          imagePreview.hidden = false;
+        });
+        document.querySelector("#removeImageButton").addEventListener("click", clearReferenceImage);
+
+        function showAuthError(message) {
+          authMessage.textContent = message;
+        }
+
+        function updateAccount(user) {
+          const signedIn = Boolean(user);
+          app.classList.toggle("authenticated", signedIn);
+          authGate.hidden = signedIn;
+          if (!signedIn) return;
+
+          const email = user.primaryEmailAddress?.emailAddress || "";
+          const fullName = user.fullName?.trim()
+            || [user.firstName, user.lastName].filter(Boolean).join(" ")
+            || email
+            || "Account";
+          profileName.textContent = fullName;
+          profileEmail.textContent = email;
+          profileAvatar.textContent = fullName.split(/\s+/).slice(0, 2).map(part => part[0]).join("").toUpperCase() || "S";
+          authMessage.textContent = "";
+        }
+
+        function loadExternalScript(source, publishableKey) {
+          return new Promise((resolve, reject) => {
+            const script = document.createElement("script");
+            script.src = source;
+            script.async = true;
+            script.crossOrigin = "anonymous";
+            if (publishableKey) script.dataset.clerkPublishableKey = publishableKey;
+            script.onload = resolve;
+            script.onerror = () => reject(new Error("Non riesco a caricare il servizio di accesso Clerk."));
+            document.head.append(script);
+          });
+        }
+
+        function mountAuthView(view) {
+          if (!clerk) return;
+          if (authView === "sign-in") clerk.unmountSignIn(authWidget);
+          if (authView === "sign-up") clerk.unmountSignUp(authWidget);
+          authView = view;
+          authSignInTab.setAttribute("aria-selected", String(view === "sign-in"));
+          authSignUpTab.setAttribute("aria-selected", String(view === "sign-up"));
+          try {
+            if (view === "sign-up") clerk.mountSignUp(authWidget);
+            else clerk.mountSignIn(authWidget);
+            authMessage.textContent = "";
+          } catch (error) {
+            authView = undefined;
+            showAuthError(error instanceof Error
+              ? `Non riesco a caricare la schermata di accesso: ${error.message}`
+              : "Non riesco a caricare la schermata di accesso. Riprova.");
+          }
+        }
+
+        async function initializeAuthentication() {
+          const response = await fetch("/api/config", { cache: "no-store" });
+          const config = await response.json();
+          if (!response.ok) throw new Error(config.error || "Configurazione dell'accesso non valida.");
+          if (!config.configured) {
+            showAuthError("Accesso non ancora configurato. Segui i passaggi nella sezione Account del README per collegare Clerk.");
+            return;
+          }
+
+          const encodedDomain = config.publishableKey.split("_")[2];
+          const standardBase64 = encodedDomain.replace(/-/g, "+").replace(/_/g, "/");
+          const frontendApi = atob(standardBase64 + "=".repeat((4 - standardBase64.length % 4) % 4)).replace(/\$$/, "");
+          if (!frontendApi || !/^[a-zA-Z0-9.-]+$/.test(frontendApi)) {
+            throw new Error("La chiave pubblica Clerk non contiene un dominio valido.");
+          }
+
+          await loadExternalScript(`https://${frontendApi}/npm/@clerk/ui@1/dist/ui.browser.js`);
+          await loadExternalScript(`https://${frontendApi}/npm/@clerk/clerk-js@6/dist/clerk.browser.js`, config.publishableKey);
+          clerk = window.Clerk;
+          if (!clerk) throw new Error("Il servizio di accesso non si è inizializzato correttamente.");
+          await clerk.load({
+            ui: { ClerkUI: window.__internal_ClerkUICtor },
+            appearance: {
+              variables: {
+                colorPrimary: "#ff945b",
+                colorBackground: "#111115",
+                colorText: "#f7f5f2",
+                colorInputBackground: "#17171c",
+                colorInputText: "#f7f5f2"
+              }
+            }
+          });
+          clerk.addListener(({ user }) => updateAccount(user));
+          updateAccount(clerk.user);
+
+          if (!clerk.isSignedIn) {
+            authSwitch.hidden = false;
+            authSignInTab.addEventListener("click", () => mountAuthView("sign-in"));
+            authSignUpTab.addEventListener("click", () => mountAuthView("sign-up"));
+            authWidget.addEventListener("click", event => {
+              if (!(event.target instanceof Element)) return;
+              const link = event.target.closest("a");
+              if (!link) return;
+              const path = new URL(link.href, window.location.href).pathname;
+              if (path.includes("sign-up")) {
+                event.preventDefault();
+                mountAuthView("sign-up");
+              } else if (path.includes("sign-in")) {
+                event.preventDefault();
+                mountAuthView("sign-in");
+              }
+            }, true);
+            mountAuthView("sign-in");
+          }
+        }
+
+        function selectMode(nextMode) {
+          if (nextMode !== "voice" && isListening && recognition) recognition.stop();
+          if (nextMode !== "voice") stopSpeaking();
+          mode = nextMode;
+          modeTabs.forEach(tab => {
+            const selected = tab.dataset.mode === mode;
+            tab.classList.toggle("selected", selected);
+            tab.setAttribute("aria-selected", String(selected));
+          });
+          const isVoice = mode === "voice";
+          composerWrap.classList.toggle("voice-mode", isVoice);
+          composerWrap.classList.toggle("image-mode", mode === "image");
+          voicePanel.classList.toggle("visible", isVoice);
+          input.placeholder = mode === "image" ? "Descrivi l'immagine che vuoi creare..." : "Chiedimi quello che vuoi...";
+          document.querySelector("#composerHint").textContent = mode === "image"
+            ? "Descrivi cosa vuoi creare partendo dalla foto (se caricata)"
+            : "Invio per inviare · Maiuscole + Invio per andare a capo";
+          if (isVoice) voiceButton.focus();
+          else input.focus();
+        }
+
+        function speakReply(text) {
+          if (!speechSynthesis || !SpeechSynthesisUtterance || !text) return;
+          const requestId = ++speechRequestId;
+          speechSynthesis.cancel();
+          const utterance = new SpeechSynthesisUtterance(text);
+          utterance.lang = "it-IT";
+          utterance.rate = 1.05;
+          const italianVoice = speechSynthesis.getVoices().find(voice => voice.lang.toLowerCase().startsWith("it"));
+          if (italianVoice) utterance.voice = italianVoice;
+          utterance.onstart = () => {
+            if (requestId !== speechRequestId) return;
+            document.querySelector(".voice-orb").classList.add("speaking");
+            voiceStopButton.disabled = false;
+            voiceTranscript.textContent = "Sto parlando...";
+          };
+          utterance.onend = () => {
+            if (requestId !== speechRequestId) return;
+            document.querySelector(".voice-orb").classList.remove("speaking");
+            voiceStopButton.disabled = true;
+            voiceTranscript.textContent = "Risposta pronta. Puoi farmi un'altra domanda.";
+          };
+          utterance.onerror = () => {
+            if (requestId !== speechRequestId) return;
+            document.querySelector(".voice-orb").classList.remove("speaking");
+            voiceStopButton.disabled = true;
+            voiceTranscript.textContent = "Non riesco a riprodurre la voce. Puoi leggere la risposta sullo schermo.";
+          };
+          speechSynthesis.speak(utterance);
+        }
+
+        function stopSpeaking() {
+          speechRequestId++;
+          if (speechSynthesis) speechSynthesis.cancel();
+          document.querySelector(".voice-orb").classList.remove("speaking");
+          voiceStopButton.disabled = true;
+        }
+
+        async function send(text = input.value.trim()) {
+          const imageFile = referenceImage;
+          if (!text && !imageFile) { input.focus(); return; }
+          text = text || "Descrivi questa immagine.";
+          welcome.classList.add("hidden");
+          conversation.classList.add("visible");
+          addMessage(text, "user", imageFile);
+          input.value = "";
+          const currentMode = mode;
+          const requestEpoch = chatEpoch;
+          if (currentMode === "voice") voiceTranscript.textContent = "Sto preparando la risposta...";
+          if (currentMode === "image") {
+            await generateImageFromPrompt(text, imageFile);
+            clearReferenceImage();
+            return;
+          }
+          clearReferenceImage();
+
+          async function generateImageFromPrompt(text, imageFile) {
+            sendButton.disabled = true;
+            input.disabled = true;
+            const status = addMessage(
+              imageFile
+                ? "Sto preparando il generatore locale e poi trasformerò la foto. Al primo utilizzo scarica circa 2 GB; sul tuo PC potrebbe volerci un po'."
+                : "Sto preparando il generatore locale. Al primo utilizzo scarica circa 2 GB; sul tuo PC potrebbe volerci un po'.",
+              "assistant"
+            );
+            const formData = new FormData();
+            formData.append("prompt", text);
+            if (imageFile) formData.append("image", imageFile, imageFile.name);
+
+            try {
+              const sessionToken = await clerk.session?.getToken();
+              if (!sessionToken) throw new Error("La sessione è scaduta. Accedi di nuovo per continuare.");
+              const response = await fetch("/api/images/generate", {
+                method: "POST",
+                headers: { "Authorization": `Bearer ${sessionToken}` },
+                body: formData
+              });
+              if (!response.ok) {
+                const result = await response.json();
+                throw new Error(result.error || `Errore del generatore (${response.status}).`);
+              }
+              if (!response.headers.get("Content-Type")?.startsWith("image/png")) {
+                throw new Error("Il generatore non ha restituito un'immagine valida.");
+              }
+              const imageBlob = await response.blob();
+              status.parentElement.parentElement.remove();
+              addGeneratedImage(imageBlob, text);
+            } catch (error) {
+              status.textContent = error instanceof TypeError
+                ? "Non riesco a raggiungere il server locale. Avvia avvia_sparkgpt.bat e riprova."
+                : error instanceof Error ? `Non riesco a creare l'immagine: ${error.message}` : "Errore sconosciuto durante la creazione.";
+            } finally {
+              sendButton.disabled = false;
+              input.disabled = false;
+              input.focus();
+            }
+          }
+
+          const isQueued = chatPendingCount > 0;
+          chatPendingCount++;
+          const reply = addMessage(isQueued ? "Messaggio in coda, arrivo da te appena finisco." : "Sto pensando...", "assistant");
+          const previousChatRequest = chatQueue;
+          let releaseChatRequest;
+          chatQueue = new Promise(resolve => { releaseChatRequest = resolve; });
+          await previousChatRequest;
+          if (requestEpoch !== chatEpoch) {
+            chatPendingCount--;
+            releaseChatRequest();
+            return;
+          }
+          chatHistory.push({ role: "user", content: text });
+          const controller = new AbortController();
+          activeChatController = controller;
+          try {
+            const requestMessages = chatHistory.slice(-24);
+            if (imageFile) {
+              chatHistory.forEach(message => { delete message.images; });
+              const encodedImage = await encodeImage(imageFile);
+              requestMessages[requestMessages.length - 1].images = [encodedImage];
+              chatHistory[chatHistory.length - 1].images = [encodedImage];
+              reply.textContent = "Sto analizzando la foto sul tuo PC; la prima analisi può richiedere un po'.";
+            }
+            const sessionToken = await clerk.session?.getToken();
+            if (!sessionToken) throw new Error("La sessione è scaduta. Accedi di nuovo per continuare.");
+            const response = await fetch("/api/chat", {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json",
+                "Authorization": `Bearer ${sessionToken}`
+              },
+              signal: controller.signal,
+              body: JSON.stringify({ messages: requestMessages })
+            });
+            if (!response.ok) {
+              const result = await response.json();
+              throw new Error(result.error || `Errore del server (${response.status}).`);
+            }
+            if (!response.body) throw new Error("Il browser non supporta la risposta progressiva.");
+
+            const reader = response.body.getReader();
+            const decoder = new TextDecoder();
+            let pending = "";
+            let answer = "";
+            let finished = false;
+            while (!finished) {
+              const { value, done } = await reader.read();
+              pending += decoder.decode(value || new Uint8Array(), { stream: !done });
+              const lines = pending.split("\n");
+              pending = lines.pop() || "";
+              for (const line of lines) {
+                if (!line.trim()) continue;
+                const chunk = JSON.parse(line);
+                if (chunk.error) throw new Error(chunk.error);
+                if (chunk.token) {
+                  answer += chunk.token;
+                  reply.textContent = answer;
+                  conversation.scrollTop = conversation.scrollHeight;
+                }
+                if (chunk.done) finished = true;
+              }
+              if (done) finished = true;
+            }
+            if (pending.trim()) {
+              const chunk = JSON.parse(pending);
+              if (chunk.error) throw new Error(chunk.error);
+              if (chunk.token) answer += chunk.token;
+            }
+            if (!answer.trim()) throw new Error("Il modello locale non ha restituito una risposta. Riprova.");
+            if (requestEpoch === chatEpoch) {
+              reply.textContent = answer.trim();
+              chatHistory.push({ role: "assistant", content: answer.trim() });
+              lastAssistantReply = answer.trim();
+              voiceReadButton.disabled = !speechSynthesis || !SpeechSynthesisUtterance;
+              if (currentMode === "voice" && mode === "voice") speakReply(lastAssistantReply);
+            }
+          } catch (error) {
+            if (requestEpoch === chatEpoch) {
+              chatHistory.pop();
+              const detail = error instanceof TypeError
+                ? "Non riesco a raggiungere il server locale. Avvia avvia_sparkgpt.bat e apri http://127.0.0.1:8000."
+                : error instanceof Error && error.name === "AbortError"
+                  ? "La risposta è stata interrotta."
+                  : error instanceof Error ? error.message : "Errore sconosciuto.";
+              reply.textContent = `Non riesco a rispondere: ${detail}`;
+            }
+          } finally {
+            if (activeChatController === controller) activeChatController = null;
+            chatPendingCount--;
+            releaseChatRequest();
+            sendButton.disabled = false;
+            input.disabled = false;
+            input.focus();
+          }
+        }
+
+        form.addEventListener("submit", event => { event.preventDefault(); send(); });
+        input.addEventListener("keydown", event => {
+          if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); form.requestSubmit(); }
+        });
+        modeTabs.forEach(tab => tab.addEventListener("click", () => selectMode(tab.dataset.mode)));
+        document.querySelectorAll(".prompt-card").forEach(card => card.addEventListener("click", () => {
+          selectMode(card.dataset.mode);
+          const prompt = card.dataset.prompt;
+          if (card.dataset.mode === "voice") return;
+          input.value = prompt;
+          send(prompt);
+        }));
+        document.querySelector("#newChat").addEventListener("click", () => {
+          chatEpoch++;
+          activeChatController?.abort();
+          generatedImageUrls.splice(0).forEach(URL.revokeObjectURL);
+          messageImageUrls.splice(0).forEach(URL.revokeObjectURL);
+          conversation.replaceChildren();
+          chatHistory.length = 0;
+          lastAssistantReply = "";
+          voiceReadButton.disabled = !speechSynthesis || !SpeechSynthesisUtterance;
+          conversation.classList.remove("visible");
+          welcome.classList.remove("hidden");
+          selectMode("chat");
+          setMobileMenu(false);
+          input.value = "";
+          clearReferenceImage();
+        });
+        mobileMenu.addEventListener("click", () => setMobileMenu(!sidebar.classList.contains("open")));
+        mobileBackdrop.addEventListener("click", () => setMobileMenu(false));
+        document.addEventListener("keydown", event => {
+          if (event.key === "Escape" && sidebar.classList.contains("open")) setMobileMenu(false);
+        });
+        document.querySelector("#history").addEventListener("click", event => {
+          const item = event.target.closest(".history-item");
+          if (!item) return;
+          document.querySelectorAll(".history-item").forEach(row => row.classList.toggle("active", row === item));
+          input.value = `Riprendiamo: ${item.textContent.toLowerCase()}`;
+          input.focus();
+          setMobileMenu(false);
+        });
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!speechSynthesis || !SpeechSynthesisUtterance) {
+          voiceReadButton.disabled = true;
+          voiceStopButton.disabled = true;
+          voiceReadButton.textContent = "Voce non disponibile";
+        } else {
+          voiceReadButton.disabled = true;
+          voiceStopButton.disabled = true;
+        }
+        voiceReadButton.addEventListener("click", () => speakReply(lastAssistantReply));
+        voiceStopButton.addEventListener("click", () => {
+          stopSpeaking();
+          voiceTranscript.textContent = "Riproduzione interrotta.";
+        });
+
+        if (SpeechRecognition) {
+          recognition = new SpeechRecognition();
+          recognition.lang = "it-IT";
+          recognition.interimResults = true;
+          recognition.onresult = event => {
+            const transcript = [...event.results].map(result => result[0].transcript).join("");
+            voiceTranscript.textContent = `Ti ho sentito: ${transcript}`;
+            if (event.results[event.results.length - 1].isFinal) {
+              recognition.stop();
+              send(transcript);
+            }
+          };
+          recognition.onstart = () => {
+            isListening = true;
+            voiceButton.textContent = "Interrompi ascolto";
+            voiceTranscript.textContent = "Ti ascolto...";
+            document.querySelector(".voice-orb").classList.add("listening");
+          };
+          recognition.onend = () => {
+            isListening = false;
+            voiceButton.textContent = "Inizia a parlare";
+            document.querySelector(".voice-orb").classList.remove("listening");
+          };
+          recognition.onerror = event => {
+            isListening = false;
+            voiceTranscript.textContent = `Microfono non disponibile (${event.error}). Controlla i permessi del browser e riprova.`;
+          };
+        } else {
+          voiceTranscript.textContent = "Il riconoscimento vocale non è supportato da questo browser. Puoi usare la chat scritta.";
+          voiceButton.disabled = true;
+          voiceButton.textContent = "Voce non disponibile";
+        }
+        voiceButton.addEventListener("click", () => {
+          if (!recognition) return;
+          if (isListening) {
+            recognition.stop();
+          } else {
+            try {
+              recognition.start();
+            } catch (error) {
+              voiceTranscript.textContent = error instanceof Error
+                ? `Non riesco ad avviare il microfono: ${error.message}`
+                : "Non riesco ad avviare il microfono. Controlla i permessi del browser.";
+            }
+          }
+        });
+        signOutButton.addEventListener("click", async () => {
+          signOutButton.disabled = true;
+          try {
+            await clerk.signOut();
+            chatHistory.length = 0;
+            generatedImageUrls.splice(0).forEach(URL.revokeObjectURL);
+            messageImageUrls.splice(0).forEach(URL.revokeObjectURL);
+            lastAssistantReply = "";
+            conversation.replaceChildren();
+            conversation.classList.remove("visible");
+            welcome.classList.remove("hidden");
+            selectMode("chat");
+          } catch (error) {
+            showAuthError(error instanceof Error ? `Non riesco a uscire dall'account: ${error.message}` : "Non riesco a uscire dall'account. Riprova.");
+          } finally {
+            signOutButton.disabled = false;
+          }
+        });
+        createPasskeyButton.addEventListener("click", async () => {
+          createPasskeyButton.disabled = true;
+          profileEmail.textContent = "Segui le istruzioni del dispositivo...";
+          try {
+            await clerk.user.createPasskey();
+            profileEmail.textContent = "Passkey aggiunta a questo dispositivo";
+          } catch (error) {
+            profileEmail.textContent = error instanceof Error
+              ? `Passkey non creata: ${error.message}`
+              : "Passkey non creata. Riprova.";
+          } finally {
+            createPasskeyButton.disabled = false;
+          }
+        });
+
+        let lastTrail = 0;
+        document.addEventListener("pointermove", event => {
+          if (event.pointerType !== "mouse" && event.pointerType !== "pen") return;
+          const now = performance.now();
+          if (now - lastTrail < 34) return;
+          lastTrail = now;
+          const dot = document.createElement("span");
+          dot.className = "cursor-dot";
+          dot.style.left = `${event.clientX}px`;
+          dot.style.top = `${event.clientY}px`;
+          document.body.append(dot);
+          dot.animate([{ opacity: .78, transform: "translate(-50%,-50%) scale(1)" }, { opacity: 0, transform: "translate(-50%,-50%) scale(.12)" }], { duration: 570, easing: "ease-out" });
+          window.setTimeout(() => dot.remove(), 600);
+        }, { passive: true });
+        initializeAuthentication().catch(error => {
+          showAuthError(error instanceof Error ? error.message : "Errore durante il caricamento dell'accesso.");
+        });
+      })();
+    </script>
+  </body>
+</html>
